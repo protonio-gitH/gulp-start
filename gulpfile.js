@@ -14,7 +14,7 @@ const svgSprite = require('gulp-svg-sprite');
 const fonter = require('gulp-fonter');
 const ttf2woff2 = require('gulp-ttf2woff2');
 const include = require('gulp-include');
-
+const maps = require('gulp-sourcemaps');
 
 function pages(){
     return src('app/pages/*.html')
@@ -42,12 +42,12 @@ function sprite(){
     .pipe(svgSprite({
         mode:{
             stack:{
-                sprite: '../sprite.svg',
+                sprite: '../sprite/sprite.svg',
                 example:true
             }
         }
     }))
-    .pipe(dest('app/images'))
+    .pipe(dest('app/images/sprite'))
 }  
 
 function images(){
@@ -71,7 +71,9 @@ function styles(){
     return src('app/scss/style.scss')
     .pipe(autoprefixer({overrideBrowserlist:['last 10 version']}))
     .pipe(concat('style.min.css'))
+    .pipe(maps.init())
     .pipe(scss({outputStyle:'compressed'}))
+    .pipe(maps.write('./maps'))
     .pipe(dest('app/css'))
     .pipe(browserSync.stream())
 }
@@ -94,11 +96,12 @@ function watching(){
             baseDir:'app/'
         }
     })
-    watch(['app/scss/style.scss'],styles);
-    watch(['app/js/main.js'],scripts);
+    watch(['app/scss/*.scss'],styles);
+    watch(['app/js/*.js','!app/js/main.min.js'],scripts);
     watch(['app/*.html']).on('change',browserSync.reload);
     watch(['app/images/src'],images);
-    watch(['app/components/*','app/pages/*'],pages);
+    watch(['app/components/**/*','app/pages/*'],pages);
+    watch(['app/images/*.svg'],sprite);
 }
 
 
@@ -112,7 +115,7 @@ function building(){
         'app/css/style.min.css',
         'app/images/*.*',
         '!app/images/*.svg',
-        'app/images/sprite.svg',
+        'app/images/sprite/sprite.svg',
         'app/fonts/*.*',
         'app/js/main.min.js',
         'app/**/*.html',
@@ -135,4 +138,4 @@ exports.building = building;
 exports.pages = pages;
 
 exports.build = series(cleanDist,building);
-exports.default = parallel(styles,images,scripts,pages,watching);
+exports.default = parallel(styles,images,sprite,scripts,pages,watching);
